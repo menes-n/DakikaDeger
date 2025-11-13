@@ -269,7 +269,7 @@ Tüm hatalar giderildi ve uygulama tam işlevlidir.
 ## 📞 İletişim
 
 Sorularınız veya geri bildiriminiz için:
-- 📄 Dosya: `notlar.txt`
+- 📄 Dosya: <Eklenecek>
 
 ---
 
