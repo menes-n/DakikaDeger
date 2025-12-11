@@ -1,4 +1,4 @@
-# 🎉 DakikaDeğer - Proje Tamamlandı!
+# 🎉 DakikaDeğer 
 
 ## 📱 Uygulama Özeti
 
