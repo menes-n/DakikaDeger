@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class NotesPage extends StatefulWidget {
   final DataService dataService;
 
-  const NotesPage({Key? key, required this.dataService}) : super(key: key);
+  const NotesPage({super.key, required this.dataService});
 
   @override
   State<NotesPage> createState() => _NotesPageState();

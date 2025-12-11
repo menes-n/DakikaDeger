@@ -5,6 +5,7 @@ import 'package:dakikadeger/models/overtime_entry.dart';
 import 'package:dakikadeger/models/income_expense.dart';
 import 'package:dakikadeger/models/note.dart';
 import 'package:dakikadeger/extensions/list_extensions.dart';
+import 'package:dakikadeger/utils/overtime_calculator.dart';
 
 class DataService {
   static const String _salaryKey = 'salary_settings';
@@ -20,105 +21,158 @@ class DataService {
 
   // ========== Maaş İşlemleri ==========
   Future<void> saveSalarySettings(SalarySettings salary) async {
-    final json = jsonEncode(salary.toJson());
-    await _prefs.setString(_salaryKey, json);
+    try {
+      final json = jsonEncode(salary.toJson());
+      await _prefs.setString(_salaryKey, json);
+    } catch (e) {
+      // Handle or log error if needed
+    }
   }
 
   SalarySettings? getSalarySettings() {
     final json = _prefs.getString(_salaryKey);
     if (json == null) return null;
-    return SalarySettings.fromJson(jsonDecode(json));
+    try {
+      return SalarySettings.fromJson(jsonDecode(json));
+    } catch (e) {
+      // corrupted data, clear and return null
+      _prefs.remove(_salaryKey);
+      return null;
+    }
   }
 
   // ========== Mesai İşlemleri ==========
   Future<void> saveOvertimeEntry(OvertimeEntry entry) async {
-    final entries = getOvertimeEntries();
-    entries.add(entry);
-    final jsonList = jsonEncode(entries.map((e) => e.toJson()).toList());
-    await _prefs.setString(_overtimeKey, jsonList);
+    try {
+      final entries = getOvertimeEntries();
+      entries.add(entry);
+      final jsonList = jsonEncode(entries.map((e) => e.toJson()).toList());
+      await _prefs.setString(_overtimeKey, jsonList);
+    } catch (e) {
+      // Handle or log error if needed
+    }
   }
 
   Future<void> updateOvertimeEntry(DateTime date, double hours) async {
-    final entries = getOvertimeEntries();
-    final index = entries.indexWhere((e) => _isSameDay(e.date, date));
+    try {
+      final entries = getOvertimeEntries();
+      final index = entries.indexWhere((e) => _isSameDay(e.date, date));
 
-    if (index != -1) {
-      entries[index] = OvertimeEntry(date: date, hours: hours);
-    } else {
-      entries.add(OvertimeEntry(date: date, hours: hours));
+      if (index != -1) {
+        entries[index] = OvertimeEntry(date: date, hours: hours);
+      } else {
+        entries.add(OvertimeEntry(date: date, hours: hours));
+      }
+
+      final jsonList = jsonEncode(entries.map((e) => e.toJson()).toList());
+      await _prefs.setString(_overtimeKey, jsonList);
+    } catch (e) {
+      // Handle or log error if needed
     }
-
-    final jsonList = jsonEncode(entries.map((e) => e.toJson()).toList());
-    await _prefs.setString(_overtimeKey, jsonList);
   }
 
   Future<void> deleteOvertimeEntry(DateTime date) async {
-    final entries = getOvertimeEntries();
-    entries.removeWhere((e) => _isSameDay(e.date, date));
-    final jsonList = jsonEncode(entries.map((e) => e.toJson()).toList());
-    await _prefs.setString(_overtimeKey, jsonList);
+    try {
+      final entries = getOvertimeEntries();
+      entries.removeWhere((e) => _isSameDay(e.date, date));
+      final jsonList = jsonEncode(entries.map((e) => e.toJson()).toList());
+      await _prefs.setString(_overtimeKey, jsonList);
+    } catch (e) {
+      // Handle or log error if needed
+    }
   }
 
   List<OvertimeEntry> getOvertimeEntries() {
     final json = _prefs.getString(_overtimeKey);
     if (json == null) return [];
-    final list = jsonDecode(json) as List;
-    return list
-        .map((e) => OvertimeEntry.fromJson(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final list = jsonDecode(json) as List;
+      return list
+          .map((e) => OvertimeEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _prefs.remove(_overtimeKey);
+      return [];
+    }
   }
 
   // ========== Gelir/Gider İşlemleri ==========
   Future<void> saveIncomeExpense(IncomeExpense item) async {
-    final items = getIncomeExpenses();
-    items.add(item);
-    final jsonList = jsonEncode(items.map((e) => e.toJson()).toList());
-    await _prefs.setString(_incomeExpenseKey, jsonList);
+    try {
+      final items = getIncomeExpenses();
+      items.add(item);
+      final jsonList = jsonEncode(items.map((e) => e.toJson()).toList());
+      await _prefs.setString(_incomeExpenseKey, jsonList);
+    } catch (e) {
+      // Handle or log error if needed
+    }
   }
 
   Future<void> deleteIncomeExpense(String id) async {
-    final items = getIncomeExpenses();
-    items.removeWhere((e) => e.id == id);
-    final jsonList = jsonEncode(items.map((e) => e.toJson()).toList());
-    await _prefs.setString(_incomeExpenseKey, jsonList);
+    try {
+      final items = getIncomeExpenses();
+      items.removeWhere((e) => e.id == id);
+      final jsonList = jsonEncode(items.map((e) => e.toJson()).toList());
+      await _prefs.setString(_incomeExpenseKey, jsonList);
+    } catch (e) {
+      // Handle or log error if needed
+    }
   }
 
   List<IncomeExpense> getIncomeExpenses() {
     final json = _prefs.getString(_incomeExpenseKey);
     if (json == null) return [];
-    final list = jsonDecode(json) as List;
-    return list
-        .map((e) => IncomeExpense.fromJson(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final list = jsonDecode(json) as List;
+      return list
+          .map((e) => IncomeExpense.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _prefs.remove(_incomeExpenseKey);
+      return [];
+    }
   }
 
   // ========== Notlar İşlemleri ==========
   Future<void> saveNote(Note note) async {
-    final notes = getNotes();
-    final index = notes.indexWhere((n) => n.id == note.id);
+    try {
+      final notes = getNotes();
+      final index = notes.indexWhere((n) => n.id == note.id);
 
-    if (index != -1) {
-      notes[index] = note;
-    } else {
-      notes.add(note);
+      if (index != -1) {
+        notes[index] = note;
+      } else {
+        notes.add(note);
+      }
+
+      final jsonList = jsonEncode(notes.map((n) => n.toJson()).toList());
+      await _prefs.setString(_notesKey, jsonList);
+    } catch (e) {
+      // Handle or log error if needed
     }
-
-    final jsonList = jsonEncode(notes.map((n) => n.toJson()).toList());
-    await _prefs.setString(_notesKey, jsonList);
   }
 
   Future<void> deleteNote(String id) async {
-    final notes = getNotes();
-    notes.removeWhere((n) => n.id == id);
-    final jsonList = jsonEncode(notes.map((n) => n.toJson()).toList());
-    await _prefs.setString(_notesKey, jsonList);
+    try {
+      final notes = getNotes();
+      notes.removeWhere((n) => n.id == id);
+      final jsonList = jsonEncode(notes.map((n) => n.toJson()).toList());
+      await _prefs.setString(_notesKey, jsonList);
+    } catch (e) {
+      // Handle or log error if needed
+    }
   }
 
   List<Note> getNotes() {
     final json = _prefs.getString(_notesKey);
     if (json == null) return [];
-    final list = jsonDecode(json) as List;
-    return list.map((n) => Note.fromJson(n as Map<String, dynamic>)).toList();
+    try {
+      final list = jsonDecode(json) as List;
+      return list.map((n) => Note.fromJson(n as Map<String, dynamic>)).toList();
+    } catch (e) {
+      _prefs.remove(_notesKey);
+      return [];
+    }
   }
 
   Note? getNoteForDate(DateTime date) {
@@ -144,12 +198,14 @@ class DataService {
 
     if (entry == null) return 0;
 
-    if (salary.type == SalaryType.hourly) {
-      return entry.hours * salary.amount;
-    } else {
-      // Aylık: gün başına 8 saat çalışıldığını varsay
-      return (entry.hours / 8) * (salary.amount / 30);
-    }
+    // Hesaplama: fazla mesai ayrı şekilde ücretlendirilecek.
+    // Temel saatlik ücret:
+    final baseHourly = salary.type == SalaryType.hourly
+        ? salary.amount
+        : (salary.amount / 30) / salary.dailyHours;
+
+    // Fazla mesai için multiplier uygulanır
+    return entry.hours * baseHourly * salary.overtimeMultiplier;
   }
 
   double calculateTotalEarning(SalarySettings salary) {
@@ -157,14 +213,71 @@ class DataService {
     double total = 0;
 
     for (var entry in entries) {
-      if (salary.type == SalaryType.hourly) {
-        total += entry.hours * salary.amount;
-      } else {
-        total += (entry.hours / 8) * (salary.amount / 30);
-      }
+      final baseHourly = salary.type == SalaryType.hourly
+          ? salary.amount
+          : (salary.amount / 30) / salary.dailyHours;
+
+      total += entry.hours * baseHourly * salary.overtimeMultiplier;
     }
 
     return total;
+  }
+
+  // Populate weekdays (Mon-Fri) within the given month with a default hours value.
+  // If `hours` is 0, entries for those weekdays will be deleted.
+  Future<void> populateWeekdaysForMonth(DateTime month, double hours) async {
+    final firstDay = DateTime(month.year, month.month, 1);
+    final lastDay = DateTime(month.year, month.month + 1, 0);
+    final today = DateTime.now();
+
+    // If the requested month is in the future, do nothing.
+    if (firstDay.isAfter(today)) return;
+
+    // Determine the end date: if it's the current month, end at today; otherwise end at month's last day.
+    final endDate = (month.year == today.year && month.month == today.month)
+        ? today
+        : lastDay;
+
+    for (var day = 1; day <= endDate.day; day++) {
+      final date = DateTime(month.year, month.month, day);
+      // weekday: 1 = Monday, 5 = Friday
+      if (date.weekday >= DateTime.monday && date.weekday <= DateTime.friday) {
+        if (hours == 0) {
+          await deleteOvertimeEntry(date);
+        } else {
+          await updateOvertimeEntry(date, hours);
+        }
+      }
+    }
+  }
+
+  /// Calculate overtime result for the given month.
+  /// If [standardMonthlyHours] is not provided, falls back to `salary.dailyHours * 30`.
+  OvertimeResult calculateOvertimeForMonth(
+    DateTime month, {
+    double? standardMonthlyHours,
+  }) {
+    final salary = getSalarySettings();
+    if (salary == null) {
+      throw StateError('Salary settings not configured');
+    }
+
+    final entries = getOvertimeEntries();
+    final monthEntries = entries.where(
+      (e) => e.date.year == month.year && e.date.month == month.month,
+    );
+    final actualWorkedHours = monthEntries.fold<double>(
+      0,
+      (sum, e) => sum + e.hours,
+    );
+
+    final standard = standardMonthlyHours ?? (salary.dailyHours * 30);
+
+    return calculateOvertime(
+      monthlySalary: salary.amount,
+      standardMonthlyHours: standard,
+      actualWorkedHours: actualWorkedHours,
+    );
   }
 
   double calculateNetBalance() {

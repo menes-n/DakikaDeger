@@ -6,8 +6,7 @@ import 'package:intl/intl.dart';
 class IncomeExpensePage extends StatefulWidget {
   final DataService dataService;
 
-  const IncomeExpensePage({Key? key, required this.dataService})
-    : super(key: key);
+  const IncomeExpensePage({super.key, required this.dataService});
 
   @override
   State<IncomeExpensePage> createState() => _IncomeExpensePageState();
@@ -171,7 +170,7 @@ class _IncomeExpensePageState extends State<IncomeExpensePage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 hintText: 'Miktar',
-                prefixIcon: const Icon(Icons.attach_money),
+                prefixIcon: const Icon(Icons.currency_lira),
               ),
             ),
             const SizedBox(height: 16),
@@ -365,7 +364,7 @@ class _IncomeExpensePageState extends State<IncomeExpensePage> {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

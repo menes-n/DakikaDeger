@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class HomePage extends StatefulWidget {
   final DataService dataService;
 
-  const HomePage({Key? key, required this.dataService}) : super(key: key);
+  const HomePage({super.key, required this.dataService});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
+    // Defensive null check for salary to avoid null errors
     final salary = widget.dataService.getSalarySettings();
 
     return Scaffold(
@@ -270,7 +271,7 @@ class _HomePageState extends State<HomePage> {
             _buildStatRow(
               'Toplam İşlem',
               incomeExpenses.length.toString(),
-              Icons.attach_money,
+              Icons.currency_lira,
             ),
             const SizedBox(height: 8),
             _buildStatRow('Notlar', notes.length.toString(), Icons.note),
@@ -344,7 +345,7 @@ class _HomePageState extends State<HomePage> {
             _buildNavButton(
               context,
               'Gelir/\nGider',
-              Icons.attach_money,
+              Icons.currency_lira,
               Colors.orange.shade700,
               3,
             ),

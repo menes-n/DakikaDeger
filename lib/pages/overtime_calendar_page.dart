@@ -6,8 +6,7 @@ import 'package:dakikadeger/extensions/list_extensions.dart';
 class OvertimeCalendarPage extends StatefulWidget {
   final DataService dataService;
 
-  const OvertimeCalendarPage({Key? key, required this.dataService})
-    : super(key: key);
+  const OvertimeCalendarPage({super.key, required this.dataService});
 
   @override
   State<OvertimeCalendarPage> createState() => _OvertimeCalendarPageState();
@@ -257,10 +256,11 @@ class _OvertimeCalendarPageState extends State<OvertimeCalendarPage> {
     final totalHours = monthEntries.fold<double>(0, (sum, e) => sum + e.hours);
     final salary = widget.dataService.getSalarySettings();
 
-    double monthlyEarning = 0;
-    if (salary != null) {
-      monthlyEarning = widget.dataService.calculateTotalEarning(salary);
-    }
+    // Overtime calculation via DataService helper
+    final formatter = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
+    var overtimeResult = salary != null
+        ? widget.dataService.calculateOvertimeForMonth(_selectedMonth)
+        : null;
 
     return Card(
       elevation: 4,
@@ -299,17 +299,43 @@ class _OvertimeCalendarPageState extends State<OvertimeCalendarPage> {
                 ),
               ],
             ),
-            if (salary != null) ...[
+            if (salary != null && overtimeResult != null) ...[
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Tahmini Kazanç:'),
+                  const Text('Normal Hakediş:'),
                   Text(
-                    '₺${monthlyEarning.toStringAsFixed(2)}',
+                    formatter.format(overtimeResult.normalEarning),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Fazla Mesai Tutarı:'),
+                  Text(
+                    formatter.format(overtimeResult.overtimePay),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Toplam Ödenecek:'),
+                  Text(
+                    formatter.format(overtimeResult.totalPay),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.green,
+                      fontSize: 16,
                     ),
                   ),
                 ],

@@ -6,8 +6,7 @@ import 'package:intl/intl.dart';
 class SalarySettingsPage extends StatefulWidget {
   final DataService dataService;
 
-  const SalarySettingsPage({Key? key, required this.dataService})
-    : super(key: key);
+  const SalarySettingsPage({super.key, required this.dataService});
 
   @override
   State<SalarySettingsPage> createState() => _SalarySettingsPageState();
@@ -15,12 +14,16 @@ class SalarySettingsPage extends StatefulWidget {
 
 class _SalarySettingsPageState extends State<SalarySettingsPage> {
   late TextEditingController _amountController;
+  late TextEditingController _dailyHoursController;
+  late TextEditingController _overtimeMultiplierController;
   late SalaryType _selectedType;
 
   @override
   void initState() {
     super.initState();
     _amountController = TextEditingController();
+    _dailyHoursController = TextEditingController();
+    _overtimeMultiplierController = TextEditingController();
     _selectedType = SalaryType.hourly;
     _loadSalarySettings();
   }
@@ -30,16 +33,20 @@ class _SalarySettingsPageState extends State<SalarySettingsPage> {
     if (salary != null) {
       _amountController.text = salary.amount.toString();
       _selectedType = salary.type;
+      _dailyHoursController.text = salary.dailyHours.toString();
+      _overtimeMultiplierController.text = salary.overtimeMultiplier.toString();
     }
   }
 
   @override
   void dispose() {
     _amountController.dispose();
+    _dailyHoursController.dispose();
+    _overtimeMultiplierController.dispose();
     super.dispose();
   }
 
-  void _saveSalarySettings() {
+  Future<void> _saveSalarySettings() async {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,9 +58,47 @@ class _SalarySettingsPageState extends State<SalarySettingsPage> {
       return;
     }
 
-    final salary = SalarySettings(amount: amount, type: _selectedType);
+    final dailyHours = double.tryParse(_dailyHoursController.text) ?? 8.0;
+    if (dailyHours <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen geçerli bir günlük saat değeri girin'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    double? parsedOvertime = double.tryParse(
+      _overtimeMultiplierController.text,
+    );
+    final computedDefaultOvertime = _selectedType == SalaryType.monthly
+        ? (amount * 15.0 / 2250.0)
+        : 1.5;
+    final overtimeMultiplier = parsedOvertime ?? computedDefaultOvertime;
+    if (overtimeMultiplier <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen geçerli bir fazla mesai çarpanı girin'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    widget.dataService.saveSalarySettings(salary);
+    final salary = SalarySettings(
+      amount: amount,
+      type: _selectedType,
+      dailyHours: dailyHours,
+      overtimeMultiplier: overtimeMultiplier,
+    );
+
+    await widget.dataService.saveSalarySettings(salary);
+    // Bu ay için hafta içi günlerini otomatik doldur
+    await widget.dataService.populateWeekdaysForMonth(
+      DateTime.now(),
+      dailyHours,
+    );
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Maaş ayarları kaydedildi'),
@@ -126,11 +171,69 @@ class _SalarySettingsPageState extends State<SalarySettingsPage> {
                 hintText: _selectedType == SalaryType.hourly
                     ? '50.00'
                     : '2500.00',
-                prefixIcon: const Icon(Icons.attach_money),
+                prefixIcon: const Icon(Icons.currency_lira),
                 suffixText: _selectedType == SalaryType.hourly
                     ? '/saat'
                     : '/ay',
               ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Günlük Standart Çalışma Saati',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _dailyHoursController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                hintText: '8.0',
+                prefixIcon: const Icon(Icons.schedule),
+                suffixText: '/gün',
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Fazla Mesai Çarpanı',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _overtimeMultiplierController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                hintText: '1.5',
+                prefixIcon: const Icon(Icons.multiline_chart),
+                suffixText: 'x',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final parsedAmount =
+                    double.tryParse(_amountController.text) ?? 0.0;
+                final computedDefault = _selectedType == SalaryType.monthly
+                    ? (parsedAmount * 15.0 / 2250.0)
+                    : 1.5;
+                final formatter = NumberFormat.currency(
+                  locale: 'tr_TR',
+                  symbol: '₺',
+                );
+                return Text(
+                  'Varsayılan: Aylık maaş * 15 / 2250 = ${formatter.format(computedDefault)}',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                );
+              },
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -201,6 +304,28 @@ class _SalarySettingsPageState extends State<SalarySettingsPage> {
                 const Text('Maaş:'),
                 Text(
                   formatter.format(salary.amount),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Günlük Standart Saat:'),
+                Text(
+                  '${salary.dailyHours.toStringAsFixed(1)} saat',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Fazla Mesai Çarpanı:'),
+                Text(
+                  '${salary.overtimeMultiplier.toStringAsFixed(2)} x',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],

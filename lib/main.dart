@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Tab(icon: Icon(Icons.home), text: 'Ana Sayfa'),
           Tab(icon: Icon(Icons.settings), text: 'Maaş'),
           Tab(icon: Icon(Icons.calendar_month), text: 'Takvim'),
-          Tab(icon: Icon(Icons.attach_money), text: 'Gelir/Gider'),
+          Tab(icon: Icon(Icons.currency_lira), text: 'Gelir/Gider'),
           Tab(icon: Icon(Icons.note), text: 'Notlar'),
         ],
         indicator: BoxDecoration(
